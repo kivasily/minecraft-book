@@ -1,6 +1,6 @@
 # minecraft-book
 <h1>A Simple Minecraft Book Editor</h1>
-<h4>Can you imagine? I made a simple book generator for Minecraft 1.20.5+. Mojang changed the command mechanics starting with version 1.20.5, and many old commands stopped working. The commands that generate books and signs for you also stopped working, as they generate commands the old way. My service is extremely simple — it fits in a single .html file and can work properly without an internet connection (if you download it to your device). This site is designed for book generation only – it supports gradients, various colors, bold and italic fonts, and much more! Try it now! Go to: <a href="">kivasily.github.io/minecraft-book/</a> or just download and open a .html file from this repository.</h4>
+<h4>Can you imagine? I made a simple book generator for Minecraft 1.20.5+. Mojang changed the command mechanics starting with version 1.20.5, and many old commands stopped working. The commands that generate books and signs for you also stopped working, as they generate commands the old way. My service is extremely simple — it fits in a single .html file and can work properly without an internet connection (if you download it to your device). This site is designed for book generation only – it supports gradients, various colors, bold and italic fonts, and much more! Try it now! Go to: kivasily.github.io/minecraft-book/ or just download and open a .html file from this repository.</h4>
 <h2>Languages</h2>
 <h4>My site supports:
   <br>

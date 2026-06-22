@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Book Editor (1.20.5+)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&family=DotGothic16&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Minecraft Regular';
+            src: url('https://cdn.jsdelivr.net/gh/South-Paw/typeface-minecraft@master/files/minecraft.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Minecraft Rus';
+            src: local('Minecraft Rus'), local('Minecraft-Rus');
+        }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        :root {
+            --mc-bg: #1e1e24;
+            --bg-grad: radial-gradient(circle at 50% 0%, #2a2a35 0%, #1e1e24 70%);
+            --mc-book: #d5c39c;
+            --mc-border: #7b5d3a;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #5c8df6;
+            --text-light: #f1f1f1;
+            --text-dark: #000000;
+            --input-bg: rgba(0,0,0,0.3);
+            --btn-hover: rgba(255,255,255,0.1);
+            --toolbar-bg: rgba(0,0,0,0.2);
+            --textarea-bg: rgba(0,0,0,0.4);
+        }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        [data-theme="light"] {
+            --mc-bg: #e4e4e9;
+            --bg-grad: radial-gradient(circle at 50% 0%, #ffffff 0%, #e4e4e9 80%);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.15);
+            --primary: #3a6cd9;
+            --text-light: #222222;
+            --text-dark: #000000;
+            --input-bg: rgba(255, 255, 255, 0.6);
+            --btn-hover: rgba(0,0,0,0.05);
+            --toolbar-bg: rgba(0,0,0,0.05);
+            --textarea-bg: rgba(255,255,255,0.8);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4a75cc; }
+
+        body {
+            background-color: var(--mc-bg);
+            background-image: var(--bg-grad);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* Исправленный порядок: сначала латиница, потом кириллица */
+        .mc-font { font-family: 'Minecraft Regular', 'Minecraft Rus', 'Minecraft', 'Pixelify Sans', monospace; }
+
+        [contenteditable="true"] *, [contenteditable="true"] font, [contenteditable="true"] span {
+            font-family: inherit !important;
+            font-size: inherit;
+        }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .container, .footer-section {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            transition: background 0.3s ease, border 0.3s ease;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { font-size: 24px; font-weight: normal; letter-spacing: 1px; }
+        
+        .header-controls { display: flex; gap: 15px; align-items: center; }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        select, input, button {
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 8px 12px;
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus { border-color: var(--primary); background: var(--input-bg); }
+        /*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        button { cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        button:hover { background: var(--btn-hover); transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+
+        #theme-toggle {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            padding: 0 5px;
+        }
+        #theme-toggle:hover { transform: scale(1.1); background: transparent; }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .editor-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 30px; }
+        @media (max-width: 768px) { .editor-layout { grid-template-columns: 1fr; } }
+
+        .toolbar {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;
+            background: var(--toolbar-bg); padding: 10px; border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .toolbar button { padding: 6px 10px; font-weight: bold; border-radius: 6px; }
+
+        .color-picker-wrapper { position: relative; display: inline-block; }
+        .color-picker { opacity: 0; position: absolute; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer; }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .book-container {
+            background: var(--mc-book);
+            border: 4px solid var(--mc-border);
+            border-radius: 4px;
+            width: 100%;
+            aspect-ratio: 146 / 180;
+            max-width: 360px;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.1), 5px 5px 15px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column;
+        }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .book-editor {
+            flex: 1;
+            padding: 20px 20px 5px 20px;
+            color: var(--text-dark);
+            font-size: 24px;
+            line-height: 1.2;
+            outline: none;
+            overflow: hidden;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .book-editor a { color: #0000AA; text-decoration: underline; }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .pagination {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 5px 20px 10px 20px; color: var(--text-dark);
+        }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .page-btn {
+            background: transparent; border: none; color: var(--text-dark);
+            font-size: 24px; padding: 0 10px; opacity: 0.7; border-radius: 0;
+        }
+        .page-btn:hover { background: transparent; opacity: 1; transform: scale(1.2); }
+        .del-btn { color: #ff5555; font-size: 18px; }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .settings-panel { display: flex; flex-direction: column; gap: 15px; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .mc-input {
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 8px 12px;
+            border-radius: 8px;
+            outline: none;
+            min-height: 38px;
+            transition: all 0.3s ease;
+            cursor: text;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-weight: normal;
+        }
+        .mc-input:focus { border-color: var(--primary); }
+        /*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        [contenteditable]:empty::before { content: attr(placeholder); color: #888; pointer-events: none; }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .gradient-box {
+            display: flex; gap: 10px; align-items: center; background: var(--toolbar-bg);
+            padding: 10px; border-radius: 8px; margin-bottom: 15px; flex-wrap: wrap;
+            transition: background 0.3s ease;
+        }
+
+        .output-panel { margin-top: 20px; }
+        textarea {
+            width: 100%; height: 120px; background: var(--textarea-bg);
+            border: 1px solid var(--glass-border); color: #2e8b57;
+            padding: 15px; border-radius: 12px; font-family: monospace;
+            resize: vertical; outline: none; transition: all 0.3s ease;
+        }
+        textarea:focus { border-color: var(--primary); }
+        [data-theme="dark"] textarea { color: #8fbc8f; }
+
+        .btn-generate {
+            width: 100%; background: var(--primary); color: white; border: none;
+            padding: 12px; font-size: 16px; font-weight: normal;
+            margin-top: 15px; border-radius: 8px;
+        }
+        .btn-generate:hover { background: #4a75cc; }
+
+        .obfuscated {
+            position: relative;
+            color: transparent !important;
+            display: inline-block;
+        }
+        .obfuscated::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABZJREFUeNpi2rVrv8M/BiYwMQAEmAAgwAFNA13uL+nQAAAAAElFTkSuQmCC') repeat;
+            background-size: 4px 4px;
+            animation: tg-spoiler 0.2s infinite steps(2);
+            pointer-events: none;
+            border-radius: 2px;
+            opacity: 0.8;
+        }
+        @keyframes tg-spoiler {
+            0% { background-position: 0 0; }
+            50% { background-position: 2px 2px; }
+            100% { background-position: 4px 0; }
+        }
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        #cmd-warning {
+            display: none;
+            color: #d97706;
+            font-size: 12px;
+            margin-top: 8px;
+            text-align: center;
+            background: rgba(245, 158, 11, 0.1);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+/*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        .footer-section { text-align: center; }
+        .footer-desc { margin: 20px 0; font-size: 14px; opacity: 0.7; line-height: 1.5; }
+        .social-links { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .social-btn { text-decoration: none; font-size: 14px; color: var(--text-light); opacity: 0.8;}
+        .social-btn:hover { opacity: 1; color: var(--primary); }
+        .gemini-credit { font-size: 12px; opacity: 0.5; letter-spacing: 1px; }
+        /*   Made by @Kivasily (GitHub, Discord, YouTube) */
+        #footer-author-input { 
+            text-align: center; font-size: 18px; color: var(--primary); 
+            font-weight: normal; border: none; background: transparent; 
+            box-shadow: none; pointer-events: none; padding: 0;
+        } /*   Made by @Kivasily (GitHub, Discord, YouTube) */
+    </style>
+</head>
+<body data-theme="dark">
+    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+<div class="container">
+    <div class="header">
+        <h1 class="mc-font" id="ui-title">Book Generator (1.20.5+)</h1>     <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+        <div class="header-controls">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            <button id="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
+            <select id="lang-select" class="mc-font">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <option value="EN">EN</option>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <option value="RU">RU</option>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <option value="FR">FR</option>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <option value="IT">IT</option>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <option value="SP">SP</option>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <option value="PR">PR</option>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <option value="UA">UA</option>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <option value="KZ">KZ</option>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <option value="JP">JP</option>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            </select>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+        </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+    </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+    <div class="editor-layout">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+        <div class="left-panel">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            <div class="toolbar">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <button onmousedown="event.preventDefault(); format('bold')" style="font-weight: bold;">B</button>
+                    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <button onmousedown="event.preventDefault(); format('italic')" style="font-style: italic;">I</button>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <button onmousedown="event.preventDefault(); format('underline')" style="text-decoration: underline;">U</button>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <button onmousedown="event.preventDefault(); format('strikeThrough')" style="text-decoration: line-through;">S</button>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <button onmousedown="event.preventDefault(); toggleObfuscated()" class="mc-font" title="Obfuscated Text" style="color: #ffaa00;">Obf</button>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <div class="color-picker-wrapper">
+                 <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->       <button id="ui-color" onmousedown="event.preventDefault()">Color</button>
+                    <input type="color" class="color-picker" oninput="format('foreColor', this.value)">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                </div>
+                <button onmousedown="event.preventDefault(); customClearFormat()" title="Clear Format" style="color: #ff5555; font-weight: bold;">T&times;</button>
+                <button onmousedown="event.preventDefault(); addLink()" id="ui-link">Link</button>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            <div class="gradient-box">
+                <span id="ui-grad-text">Gradient:</span>
+                <input type="color" id="grad-start" value="#ff0000">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <input type="color" id="grad-end" value="#0000ff">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <button onmousedown="event.preventDefault(); applyGradient()" id="ui-apply-grad">Apply</button>
+            </div>
+    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            <div class="book-container">
+                <div class="book-editor mc-font" id="editor" contenteditable="true" spellcheck="false"></div>
+                <div class="pagination mc-font">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                    <button class="page-btn" onclick="prevPage()">&#8592;</button>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                    <span id="page-indicator">1 / 1</span>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                    <button class="page-btn del-btn" onclick="deletePage()" id="ui-del-page" title="Delete Page">&#128465;</button>
+                    <button class="page-btn" onclick="nextPage()">&#8594;</button>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+        </div>
+    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+        <div class="right-panel settings-panel">
+            <div class="input-group">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <label id="ui-target">Target Selector</label>
+                <input type="text" id="target" class="mc-font" value="@p" placeholder="@a, @p, PlayerName">
+            </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            <div class="input-group">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <label id="ui-book-title">Book Title</label>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <div contenteditable="true" id="book-title" class="mc-input mc-font" spellcheck="false" placeholder="My Awesome Book"></div>
+            </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            <div class="input-group">
+                <label id="ui-author">Author</label>
+                <div contenteditable="true" id="author" class="mc-input mc-font" spellcheck="false" placeholder="Herobrine"></div>
+            </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            <div class="input-group">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <label id="ui-lore">Hover Lore (Notes)</label>
+                <div contenteditable="true" id="lore" class="mc-input mc-font" spellcheck="false" placeholder="Rare Item..."></div>
+            </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+
+            <button class="btn-generate mc-font" onclick="generateCommand()" id="ui-generate">Generate Command</button>
+            <div id="cmd-warning" class="mc-font"></div>
+                <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+            <div class="output-panel">    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+                <textarea id="output" readonly placeholder="// Command will appear here..."></textarea>
+                <button onclick="copyCommand()" id="ui-copy" style="width: 100%; margin-top: 10px;">Copy</button>
+            </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+        </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+    </div>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+</div>
+
+<div class="footer-section">
+    <h3 id="ui-footer-author-title" class="mc-font" style="margin-bottom: 15px;">Author</h3>
+    <input type="text" id="footer-author-input" class="mc-font" value="@Kivasily" readonly tabindex="-1">
+        <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+    <p id="ui-footer-desc" class="footer-desc mc-font">
+        Advanced Minecraft book command generator supporting the new 1.20.5+ component syntax. Style your text with ease!
+    </p>
+        <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+    <div class="social-links mc-font">
+        <a href="https://github.com/kivasily" class="social-btn">GitHub</a>
+        <a href="https://kivasily.github.io/tehpart/404.html" class="social-btn">Email (Later^-^)</a>
+        <a href="https://youtube.com/@Kivasily" class="social-btn">YouTube</a>
+        <a href="https://discord.com/users/1340334027730714706/" class="social-btn">Discord</a>
+    </div>
+        <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+    <p id="ui-footer-gemini" class="gemini-credit mc-font">[Made with Gemini Pro]</p>
+</div>
+    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+<script> //   Made by @Kivasily (GitHub, Discord, YouTube)
+    const translations = {
+        EN: { title: "Book Generator (1.20.5+)", color: "Color", link: "Link", grad: "Gradient:", apply: "Apply", target: "Target Selector", bTitle: "Book Title", auth: "Author", lore: "Hover Lore", gen: "Generate Command", copy: "Copy", copied: "Copied!", del: "Delete", fTitle: "Author", fDesc: "Advanced Minecraft book command generator supporting the new 1.20.5+ component syntax. Style your text with ease!", fGemini: "Made with Gemini Pro", warnLimit: "This command is too long. To use it, execute this command using a Command Block." },
+        RU: { title: "Генератор Книг (1.20.5+)", color: "Цвет", link: "Ссылка", grad: "Градиент:", apply: "Применить", target: "Кому выдать", bTitle: "Название книги", auth: "Автор", lore: "Описание (Lore)", gen: "Создать команду", copy: "Копировать", copied: "Скопировано!", del: "Удалить", fTitle: "Автор", fDesc: "Современный генератор команд для книг в Minecraft с поддержкой нового синтаксиса 1.20.5+. Настраивайте градиенты, цвета и стили прямо в редакторе!", fGemini: "Сделано с помощью Gemini Pro", warnLimit: "Эта команда слишком велика. Чтобы использовать ее, команду нужно исполнить с помощью командного блока." },
+        FR: { title: "Générateur de Livres (1.20.5+)", color: "Couleur", link: "Lien", grad: "Dégradé:", apply: "Appliquer", target: "Cible", bTitle: "Titre du livre", auth: "Auteur", lore: "Lore", gen: "Générer la commande", copy: "Copier", copied: "Copié !", del: "Supprimer", fTitle: "Auteur", fDesc: "Générateur avancé de commandes de livres Minecraft prenant en charge la nouvelle syntaxe 1.20.5+. Personnalisez votre texte !", fGemini: "Fait avec Gemini Pro", warnLimit: "Cette commande est trop longue. Pour l'utiliser, exécutez-la avec un bloc de commande." },
+        IT: { title: "Generatore di Libri (1.20.5+)", color: "Colore", link: "Link", grad: "Sfumatura:", apply: "Applica", target: "Bersaglio", bTitle: "Titolo del libro", auth: "Autore", lore: "Lore", gen: "Genera Comando", copy: "Copia", copied: "Copiato!", del: "Elimina", fTitle: "Autore", fDesc: "Generatore di comandi per libri Minecraft che supporta la nuova sintassi 1.20.5+. Personalizza il tuo testo con facilità!", fGemini: "Realizzato con Gemini Pro", warnLimit: "Questo comando è troppo lungo. Per usarlo, eseguilo con un blocco comandi." },
+        SP: { title: "Generador de Libros (1.20.5+)", color: "Color", link: "Enlace", grad: "Degradado:", apply: "Aplicar", target: "Objetivo", bTitle: "Título del libro", auth: "Autor", lore: "Lore", gen: "Generar Comando", copy: "Copiar", copied: "¡Copiado!", del: "Eliminar", fTitle: "Autor", fDesc: "Avanzado generador de comandos de libros de Minecraft con soporte para la sintaxis 1.20.5+. ¡Personaliza tu texto fácilmente!", fGemini: "Hecho con Gemini Pro", warnLimit: "Este comando es demasiado largo. Para usarlo, ejecútalo usando un Bloque de Comandos." },
+        PR: { title: "Gerador de Livros (1.20.5+)", color: "Cor", link: "Link", grad: "Gradiente:", apply: "Aplicar", target: "Alvo", bTitle: "Título do Livro", auth: "Autor", lore: "Lore", gen: "Gerar Comando", copy: "Copiar", copied: "Copiado!", del: "Excluir", fTitle: "Autor", fDesc: "Gerador de comandos avançado para livros do Minecraft com suporte à sintaxe 1.20.5+. Estilize seu texto facilmente!", fGemini: "Feito com Gemini Pro", warnLimit: "Este comando é muito longo. Para usá-lo, execute através de um Bloco de Comando." },
+        UA: { title: "Генератор Книг (1.20.5+)", color: "Колір", link: "Посилання", grad: "Градієнт:", apply: "Застосувати", target: "Кому видати", bTitle: "Назва книги", auth: "Автор", lore: "Опис (Lore)", gen: "Створити команду", copy: "Копіювати", copied: "Скопійовано!", del: "Видалити", fTitle: "Автор", fDesc: "Сучасний генератор команд для книг у Minecraft з підтримкою нового синтаксису 1.20.5+. Налаштовуйте градієнти, кольори та стилі легко!", fGemini: "Зроблено за допомогою Gemini Pro", warnLimit: "Ця команда занадто велика. Щоб використати її, потрібно виконати її за допомогою командного блоку." },
+        KZ: { title: "Кітап Генераторы (1.20.5+)", color: "Түс", link: "Сілтеме", grad: "Градиент:", apply: "Қолдану", target: "Кімге беру", bTitle: "Кітап атауы", auth: "Авторы", lore: "Сипаттама", gen: "Команда құру", copy: "Көшіру", copied: "Көшірілді!", del: "Жою", fTitle: "Авторы", fDesc: "1.20.5+ синтаксисін қолдайтын заманауи Minecraft кітап генераторы. Градиенттерді, түстерді және стильдерді оңай реттеңіз!", fGemini: "Gemini Pro арқылы жасалған", warnLimit: "Бұл команда тым ұзын. Оны пайдалану үшін пәрмен блогы арқылы орындаңыз." },
+        JP: { title: "本ジェネレーター (1.20.5+)", color: "色", link: "リンク", grad: "グラデーション:", apply: "適用", target: "対象", bTitle: "本のタイトル", auth: "著者", lore: "説明 (Lore)", gen: "コマンド生成", copy: "コピー", copied: "コピー完了！", del: "削除", fTitle: "作成者", fDesc: "1.20.5+構文をサポートする高度なMinecraft本コマンドジェネレーター。グラデーションや色でテキストを装飾！", fGemini: "Gemini Pro で作成", warnLimit: "このコマンドは長すぎます。使用するには、コマンドブロックを使用してください。" }
+    };
+//   Made by @Kivasily (GitHub, Discord, YouTube)
+    let pages = [""];
+    let currentPage = 0;
+    const editor = document.getElementById('editor');
+    let currentLang = "EN";
+
+    let savedRange = null;
+    let currentEditable = editor;
+
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.getElementById('theme-toggle');
+        if (body.getAttribute('data-theme') === 'light') {
+            body.setAttribute('data-theme', 'dark');
+            btn.innerText = '🌙';
+        } else {
+            body.setAttribute('data-theme', 'light');
+            btn.innerText = '☀️';
+        }
+    }
+//   Made by @Kivasily (GitHub, Discord, YouTube)
+    document.addEventListener('selectionchange', () => {
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0) {
+            const node = sel.getRangeAt(0).commonAncestorContainer;
+            const parent = node.nodeType === 3 ? node.parentNode : node;
+            const isEditable = parent.closest('[contenteditable="true"]');
+            if (isEditable) {
+                savedRange = sel.getRangeAt(0);
+                currentEditable = isEditable;
+            }
+        }
+    });
+//   Made by @Kivasily (GitHub, Discord, YouTube)
+    function restoreSelection() {
+        if (savedRange) {
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(savedRange);
+            currentEditable.focus();
+        }
+    }
+//   Made by @Kivasily (GitHub, Discord, YouTube)
+    document.getElementById('lang-select').addEventListener('change', (e) => {
+        currentLang = e.target.value;
+        const t = translations[currentLang];
+        document.getElementById('ui-title').innerText = t.title;
+        document.getElementById('ui-color').innerText = t.color;
+        document.getElementById('ui-link').innerText = t.link;
+        document.getElementById('ui-grad-text').innerText = t.grad;
+        document.getElementById('ui-apply-grad').innerText = t.apply;
+        document.getElementById('ui-target').innerText = t.target;
+        document.getElementById('ui-book-title').innerText = t.bTitle;
+        document.getElementById('ui-author').innerText = t.auth;
+        document.getElementById('ui-lore').innerText = t.lore;
+        document.getElementById('ui-generate').innerText = t.gen;
+        document.getElementById('ui-copy').innerText = t.copy;
+        
+        document.getElementById('ui-footer-author-title').innerText = t.fTitle;
+        document.getElementById('ui-footer-desc').innerText = t.fDesc;
+        document.getElementById('ui-footer-gemini').innerText = t.fGemini;
+        
+        const warningEl = document.getElementById('cmd-warning');
+        if(warningEl.style.display === "block") warningEl.innerText = t.warnLimit;
+    });
+
+    let lastContent = "";
+    editor.addEventListener('input', () => {
+        if (editor.scrollHeight > editor.clientHeight) {
+            editor.innerHTML = lastContent;
+            try {
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(editor);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch(e) {}
+        } else {
+            lastContent = editor.innerHTML;
+            if (currentEditable === editor) pages[currentPage] = editor.innerHTML;
+        }
+    });
+
+    function format(cmd, value = null) {
+        restoreSelection();
+        document.execCommand(cmd, false, value);
+        if (currentEditable === editor) {
+            lastContent = editor.innerHTML;
+            pages[currentPage] = editor.innerHTML;
+        }
+    }
+
+    function customClearFormat() {
+        restoreSelection();
+        
+        // 1. Стандартная очистка браузера
+        document.execCommand('removeFormat', false, null);
+        
+        // 2. Сброс цвета принудительно на черный (дефолтный цвет книги)
+        document.execCommand('foreColor', false, '#000000');
+        
+        // 3. Удаление эффекта OBF с выделенного текста
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0) {
+            const obfElements = document.querySelectorAll('.obfuscated');
+            obfElements.forEach(span => {
+                if (sel.containsNode(span, true)) {
+                    const parent = span.parentNode;
+                    while(span.firstChild) {
+                        parent.insertBefore(span.firstChild, span);
+                    }
+                    parent.removeChild(span);
+                }
+            });
+        }
+
+        if (currentEditable === editor) {
+            lastContent = editor.innerHTML;
+            pages[currentPage] = editor.innerHTML;
+        }
+    }
+
+    function toggleObfuscated() {
+        restoreSelection();
+        const selection = window.getSelection();
+        if (!selection.rangeCount || selection.isCollapsed) return;
+
+        const range = selection.getRangeAt(0);
+        const span = document.createElement('span');
+        span.className = 'obfuscated';
+        span.dataset.obf = "true";
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        
+        if (currentEditable === editor) {
+            lastContent = editor.innerHTML;
+            pages[currentPage] = editor.innerHTML;
+        }
+    }
+
+    function addLink() {
+        const url = prompt("Enter URL:");
+        if (url) format('createLink', url);
+    }
+
+    function hexToRgb(hex) {
+        const bigint = parseInt(hex.slice(1), 16);
+        return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+    }
+//   Made by @Kivasily (GitHub, Discord, YouTube)
+    function rgbToHexStr(r, g, b) {
+        return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+    }
+
+    function applyGradient() {
+        restoreSelection();
+        const selection = window.getSelection();
+        if (!selection.rangeCount || selection.isCollapsed) return;
+
+        const text = selection.toString();
+        const startRgb = hexToRgb(document.getElementById('grad-start').value);
+        const endRgb = hexToRgb(document.getElementById('grad-end').value);
+        
+        const frag = document.createDocumentFragment();
+        const len = text.length;
+
+        for (let i = 0; i < len; i++) {
+            const span = document.createElement('span');
+            const ratio = len > 1 ? i / (len - 1) : 0;
+            const r = Math.round(startRgb.r + (endRgb.r - startRgb.r) * ratio);
+            const g = Math.round(startRgb.g + (endRgb.g - startRgb.g) * ratio);
+            const b = Math.round(startRgb.b + (endRgb.b - startRgb.b) * ratio);
+            
+            span.style.color = rgbToHexStr(r, g, b);
+            span.innerText = text[i];
+            frag.appendChild(span);
+        }
+
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(frag);
+
+        if (currentEditable === editor) {
+            lastContent = editor.innerHTML;
+            pages[currentPage] = editor.innerHTML;
+        }
+    }
+//   Made by @Kivasily (GitHub, Discord, YouTube)
+    function updatePageIndicator() {
+        document.getElementById('page-indicator').innerText = `${currentPage + 1} / ${pages.length}`;
+    }
+
+    function prevPage() {
+        if (currentPage > 0) {
+            currentPage--;
+            editor.innerHTML = pages[currentPage];
+            lastContent = editor.innerHTML;
+            updatePageIndicator();
+        }
+    }
+
+    function nextPage() {
+        if (currentPage === pages.length - 1 && editor.innerText.trim() === "") return;
+        if (currentPage === pages.length - 1) pages.push("");
+        currentPage++;
+        editor.innerHTML = pages[currentPage];
+        lastContent = editor.innerHTML;
+        updatePageIndicator();
+    }
+
+    function deletePage() {
+        if (pages.length > 1) {
+            pages.splice(currentPage, 1);
+            if (currentPage >= pages.length) currentPage = pages.length - 1;
+            editor.innerHTML = pages[currentPage];
+            lastContent = editor.innerHTML;
+            updatePageIndicator();
+        }
+    }
+
+    function rgbStringToHex(rgb) {
+        const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        if (!match) return rgb;
+        return rgbToHexStr(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+    }
+
+    function parseNodeToMCJson(node, currentStyles) {
+        let components = [];
+        let styles = { ...currentStyles };
+
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (node.textContent !== "") {
+                let comp = { text: node.textContent };
+                if (styles.bold) comp.bold = true;
+                if (styles.italic) comp.italic = true;
+                if (styles.underlined) comp.underlined = true;
+                if (styles.strikethrough) comp.strikethrough = true;
+                if (styles.obfuscated) comp.obfuscated = true;
+                if (styles.color) comp.color = styles.color;
+                if (styles.clickEvent) comp.clickEvent = styles.clickEvent;
+                components.push(comp);
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const tag = node.tagName.toLowerCase();
+            
+            if (tag === 'b' || tag === 'strong') styles.bold = true;
+            if (tag === 'i' || tag === 'em') styles.italic = true;
+            if (tag === 'u') styles.underlined = true;
+            if (tag === 's' || tag === 'strike') styles.strikethrough = true;
+            if (tag === 'a') styles.clickEvent = { action: 'open_url', value: node.href };
+            if (node.dataset.obf === "true" || node.classList.contains('obfuscated')) styles.obfuscated = true;
+            
+            if (node.style.color && node.style.color !== 'inherit') styles.color = rgbStringToHex(node.style.color);
+            if (tag === 'font' && node.color) styles.color = rgbStringToHex(node.color);
+            
+            if (node.style.fontWeight === 'bold') styles.bold = true;
+            if (node.style.fontStyle === 'italic') styles.italic = true;
+            if (node.style.textDecoration.includes('underline')) styles.underlined = true;
+            if (node.style.textDecoration.includes('line-through')) styles.strikethrough = true;
+
+            if (tag === 'div' || tag === 'p' || tag === 'br') {
+                if (components.length > 0) components.push({ text: "\n" });
+            }
+
+            for (let child of node.childNodes) {
+                components = components.concat(parseNodeToMCJson(child, styles));
+            }
+        }
+        return components;
+    }
+
+    function generateCommand() {
+        if (currentEditable === editor) pages[currentPage] = editor.innerHTML;
+        
+        const target = document.getElementById('target').value || '@p';
+        
+        const titleNode = document.getElementById('book-title');
+        const titlePlain = titleNode.innerText.trim() || 'Written Book';
+        const titleJson = parseNodeToMCJson(titleNode, {});
+
+        const authorNode = document.getElementById('author');
+        const authorPlain = authorNode.innerText.trim() || 'Player';
+
+        const loreNode = document.getElementById('lore');
+        const loreJson = parseNodeToMCJson(loreNode, {});
+
+        let pagesJson = [];
+        const tempDiv = document.createElement('div');
+
+        pages.forEach(pageHtml => {
+            if (!pageHtml.trim()) return;
+            tempDiv.innerHTML = pageHtml;
+            let mcJson = parseNodeToMCJson(tempDiv, {});
+            if (mcJson.length > 0 && mcJson[0].text === "\n") mcJson.shift();
+            if (mcJson.length === 0) mcJson = [{ text: "" }];
+            pagesJson.push(`'${JSON.stringify(mcJson).replace(/'/g, "\\'")}'`);
+        });
+
+        if (pagesJson.length === 0) pagesJson.push(`'{"text":""}'`);
+
+        let components = [];
+        components.push(`minecraft:written_book_content={title:"${titlePlain.replace(/"/g, '\\"')}",author:"${authorPlain.replace(/"/g, '\\"')}",pages:[${pagesJson.join(',')}]}`);
+        
+        const hasTitleFormat = titleJson.some(c => c.color || c.bold || c.italic || c.underlined || c.strikethrough || c.obfuscated);
+        if (hasTitleFormat) {
+            const customNameObj = { text: "", extra: titleJson, italic: false };
+            components.push(`minecraft:custom_name='${JSON.stringify(customNameObj).replace(/'/g, "\\'")}'`);
+        } else if (titlePlain !== 'Written Book') {
+            components.push(`minecraft:custom_name='{"text":"${titlePlain.replace(/"/g, '\\"')}","italic":false}'`);
+        }
+
+        if (loreJson.length > 0) {
+            const loreObj = { text: "", extra: loreJson, color: "gray", italic: false };
+            components.push(`minecraft:lore=['${JSON.stringify(loreObj).replace(/'/g, "\\'")}']`);
+        }
+
+        const command = `/give ${target} minecraft:written_book[${components.join(',')}] 1`;
+        document.getElementById('output').value = command;
+        
+        const warningEl = document.getElementById('cmd-warning');
+        if (command.length > 256) {
+            warningEl.innerText = translations[currentLang].warnLimit;
+            warningEl.style.display = 'block';
+        } else {
+            warningEl.style.display = 'none';
+        }
+    }
+//   Made by @Kivasily (GitHub, Discord, YouTube)
+    function copyCommand() {
+        const output = document.getElementById('output');
+        output.select();
+        document.execCommand('copy');
+        
+        const btn = document.getElementById('ui-copy');
+        const originalText = btn.innerText;
+        btn.innerText = translations[currentLang].copied;
+        setTimeout(() => btn.innerText = originalText, 2000);
+    }
+//   Made by @Kivasily (GitHub, Discord, YouTube)
+    document.getElementById('lang-select').dispatchEvent(new Event('change'));
+</script>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+</body>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
+</html>    <!-- Made by @Kivasily (GitHub, Discord, YouTube) -->
